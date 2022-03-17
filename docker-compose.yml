@@ -9,15 +9,4 @@ services:
       - 8081:8081
     environment:
       server.port: 8081
-      server.address: localhost
-  # app1:
-  #   image: 'dht:latest'
-  #   build:
-  #     context: .
-  #   environment:
-  #     server.port: 8081
-  #     server.address: 127.0.0.1
-  #     gateway.address: app
-  #     gateway.port: 8081
-  #   depends_on:
-  #     - app
+      server.address: 127.0.0.1

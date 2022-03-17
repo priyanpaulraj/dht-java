@@ -35,30 +35,32 @@ public class ClusterHandler {
                 if (entity.getStatusCode() == HttpStatus.OK) {
                     TREE.addAll(entity.getBody());
                     populateKeysFromSuccessor(MyInfo.get());
-                    updateMyInfoToNeighbours(gs);
+                    updateMyInfoToNeighbours(entity.getBody());
                 } else {
-                    System.err.println("Bad response from gateway node Help me! I'm independent now : " + entity.getStatusCodeValue());
+                    System.err.println("Bad response from gateway node Help me! I'm alone : " + entity.getStatusCodeValue());
                     //System.exit(0);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                System.err.println("Cannot connect gateway node. Help me! I'm independent now " + e.getMessage());
+                System.err.println("Cannot connect gateway node. Help me! I'm alone " + e.getMessage());
                 //System.exit(0);
             }
         });
         TREE.add(MyInfo.get());
     }
 
-    private void updateMyInfoToNeighbours(NodeSocket gs) {
-        RequestEntity<NodeInfo> requestEntity = RequestEntity
-                .put(gs.getUrl() + "/cluster/node")
-                .accept(MediaType.APPLICATION_JSON)
-                .body(MyInfo.get());
-        ResponseEntity<?> responseEntity = restTemplate.exchange(requestEntity, new ParameterizedTypeReference<>() {
+    private void updateMyInfoToNeighbours(Set<NodeInfo> neighbours) {
+        neighbours.forEach(neighbour -> {
+            RequestEntity<NodeInfo> requestEntity = RequestEntity
+                    .put( neighbour.getSocket().getUrl()+ "/cluster/node")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(MyInfo.get());
+            ResponseEntity<?> responseEntity = restTemplate.exchange(requestEntity, new ParameterizedTypeReference<>() {
+            });
+            if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+                System.out.println("Cannot update my status to neighbours : " + responseEntity.getStatusCodeValue());
+            }
         });
-        if (!responseEntity.getStatusCode().is2xxSuccessful()) {
-            System.out.println("Cannot update my status to neighbours : " + responseEntity.getStatusCodeValue());
-        }
     }
 
     private NodeInfo getSuccessor(NodeInfo nodeInfo) {
@@ -98,7 +100,7 @@ public class ClusterHandler {
     }
 
     public NodeInfo getNodeForKey(String key) {
-        return getSuccessor(Hash.toSHA1(key));
+        return getSuccessor(String.valueOf(Hash.doHash(key)));
     }
 
 }

@@ -2,6 +2,8 @@ package com.ds.dht.cluster;
 
 import com.ds.dht.util.Hash;
 
+import java.util.UUID;
+
 public class MyInfo {
 
     private static NodeInfo myInfo;
@@ -10,7 +12,7 @@ public class MyInfo {
 
     public static NodeInfo get() {
         if (myInfo == null) {
-            String hash = Hash.toSHA1(mySocket.getUrl());
+            String hash = String.valueOf(Hash.doHash(UUID.randomUUID().toString()));
             myInfo = new NodeInfo(hash, mySocket);
         }
         return myInfo;

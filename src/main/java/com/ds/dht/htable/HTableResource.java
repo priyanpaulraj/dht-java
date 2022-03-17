@@ -55,7 +55,7 @@ public class HTableResource {
         return HTable.keysToShare(newNodeId);
     }
 
-    @GetMapping("/keys")
+    @GetMapping("/list/keys")
     public Set<String> listKeys() {
         return HTable.keys();
     }
