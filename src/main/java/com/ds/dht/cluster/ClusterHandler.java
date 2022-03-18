@@ -1,18 +1,24 @@
 package com.ds.dht.cluster;
 
-import com.ds.dht.htable.HTable;
-import com.ds.dht.util.Hash;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.Collectors;
+
+import com.ds.dht.htable.HTable;
+import com.ds.dht.util.Hash;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 @Component
 public class ClusterHandler {
@@ -37,13 +43,14 @@ public class ClusterHandler {
                     populateKeysFromSuccessor(MyInfo.get());
                     updateMyInfoToNeighbours(entity.getBody());
                 } else {
-                    System.err.println("Bad response from gateway node Help me! I'm alone : " + entity.getStatusCodeValue());
-                    //System.exit(0);
+                    System.err.println(
+                            "Bad response from gateway node Help me! I'm alone : " + entity.getStatusCodeValue());
+                    // System.exit(0);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 System.err.println("Cannot connect gateway node. Help me! I'm alone " + e.getMessage());
-                //System.exit(0);
+                // System.exit(0);
             }
         });
         TREE.add(MyInfo.get());
@@ -52,7 +59,7 @@ public class ClusterHandler {
     private void updateMyInfoToNeighbours(Set<NodeInfo> neighbours) {
         neighbours.forEach(neighbour -> {
             RequestEntity<NodeInfo> requestEntity = RequestEntity
-                    .put( neighbour.getSocket().getUrl()+ "/cluster/node")
+                    .put(neighbour.getSocket().getUrl() + "/cluster/node")
                     .accept(MediaType.APPLICATION_JSON)
                     .body(MyInfo.get());
             ResponseEntity<?> responseEntity = restTemplate.exchange(requestEntity, new ParameterizedTypeReference<>() {
@@ -80,7 +87,8 @@ public class ClusterHandler {
     }
 
     private void populateKeysFromSuccessor(NodeInfo myInfo) {
-        ResponseEntity<Map<String, String>> entity = restTemplate.exchange(getSuccessor(myInfo).getSocket().getUrl() + "/share/" + myInfo.getId(),
+        ResponseEntity<Map<String, String>> entity = restTemplate.exchange(
+                getSuccessor(myInfo).getSocket().getUrl() + "/share/" + myInfo.getId(),
                 HttpMethod.GET, null, new ParameterizedTypeReference<>() {
                 });
         if (entity.getStatusCode() == HttpStatus.OK) {
@@ -92,7 +100,17 @@ public class ClusterHandler {
     }
 
     Set<NodeInfo> getClusterInfo() {
-        return TREE;
+        return TREE.stream().map(ni -> {
+            ResponseEntity<Integer> entity = restTemplate.exchange(ni.getSocket().getUrl() + "/table/size",
+                    HttpMethod.GET, null, new ParameterizedTypeReference<>() {
+                    });
+            if (entity.getStatusCode() == HttpStatus.OK) {
+                ni.setNoOfKeys(entity.getBody());
+            }else{
+                ni.setNoOfKeys(-1);
+            }
+            return ni;
+        }).collect(Collectors.toSet());
     }
 
     void addNode(NodeInfo nodeInfo) {

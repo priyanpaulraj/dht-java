@@ -1,17 +1,23 @@
 package com.ds.dht.htable;
 
+import java.util.Map;
+import java.util.Set;
+
 import com.ds.dht.cluster.ClusterHandler;
 import com.ds.dht.cluster.MyInfo;
 import com.ds.dht.cluster.NodeInfo;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/")
@@ -55,9 +61,14 @@ public class HTableResource {
         return HTable.keysToShare(newNodeId);
     }
 
-    @GetMapping("/list/keys")
+    @GetMapping("/table/keys")
     public Set<String> listKeys() {
         return HTable.keys();
+    }
+
+    @GetMapping("/table/size")
+    public int size() {
+        return HTable.size();
     }
 
 }

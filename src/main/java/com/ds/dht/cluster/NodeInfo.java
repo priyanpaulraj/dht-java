@@ -10,8 +10,15 @@ import lombok.NoArgsConstructor;
 public class NodeInfo {
     private String id;
     private NodeSocket socket;
+    private int noOfKeys;
+
+    public NodeInfo(String id, NodeSocket socket) {
+        this.id = id;
+        this.socket = socket;
+    }
 
     public NodeInfo(String id) {
         this.id = id;
     }
+
 }

@@ -48,4 +48,8 @@ public class HTable {
         return map;
     }
 
+    public static int size() {
+        return MAP.size();
+    }
+
 }
