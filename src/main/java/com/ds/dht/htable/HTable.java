@@ -6,7 +6,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HTable {
+
+    private static Logger logger = LoggerFactory.getLogger(HTable.class);
 
     private static final Map<String, String> MAP;
 

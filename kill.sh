@@ -1,4 +1,4 @@
-kill -9 21987
-kill -9 22000
-kill -9 22005
+kill -9 7737
+kill -9 7751
+kill -9 7762
 echo killed all nodes

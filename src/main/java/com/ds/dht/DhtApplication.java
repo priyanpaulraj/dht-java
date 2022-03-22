@@ -1,20 +1,25 @@
 package com.ds.dht;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
 import com.ds.dht.cluster.ClusterHandler;
 import com.ds.dht.cluster.MyInfo;
 import com.ds.dht.cluster.NodeSocket;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
 @SpringBootApplication
 public class DhtApplication implements ApplicationRunner {
+
+    private static Logger logger = LoggerFactory.getLogger(DhtApplication.class);
 
     @Autowired
     private ClusterHandler clusterHandler;
@@ -32,7 +37,7 @@ public class DhtApplication implements ApplicationRunner {
             argMap.put(agArr[0], agArr[1]);
         }
         if (!argMap.containsKey("server.address") || !argMap.containsKey("server.port")) {
-            System.err.println("Provide server ip and port as program args");
+            logger.error("Provide server ip and port as program args");
             System.exit(0);
         }
         MyInfo.mySocket = new NodeSocket(argMap.get("server.address"), Integer.parseInt(argMap.get("server.port")));

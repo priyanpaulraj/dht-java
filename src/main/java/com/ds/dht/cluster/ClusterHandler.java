@@ -7,9 +7,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 
+import com.ds.dht.DhtApplication;
 import com.ds.dht.htable.HTable;
 import com.ds.dht.util.Hash;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -22,6 +25,8 @@ import org.springframework.web.client.RestTemplate;
 
 @Component
 public class ClusterHandler {
+
+    private static Logger logger = LoggerFactory.getLogger(DhtApplication.class);
 
     private static final Set<NodeInfo> TREE;
 
@@ -43,14 +48,10 @@ public class ClusterHandler {
                     populateKeysFromSuccessor(MyInfo.get());
                     updateMyInfoToNeighbours(entity.getBody());
                 } else {
-                    System.err.println(
-                            "Bad response from gateway node Help me! I'm alone : " + entity.getStatusCodeValue());
-                    // System.exit(0);
+                    logger.error("Bad response from gateway node Help me! I'm alone : " + entity.getStatusCodeValue());
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                System.err.println("Cannot connect gateway node. Help me! I'm alone " + e.getMessage());
-                // System.exit(0);
+                logger.error("Cannot connect gateway node. Help me! I'm alone ", e);
             }
         });
         TREE.add(MyInfo.get());
@@ -65,7 +66,7 @@ public class ClusterHandler {
             ResponseEntity<?> responseEntity = restTemplate.exchange(requestEntity, new ParameterizedTypeReference<>() {
             });
             if (!responseEntity.getStatusCode().is2xxSuccessful()) {
-                System.out.println("Cannot update my status to neighbours : " + responseEntity.getStatusCodeValue());
+                logger.error("Cannot update my status to neighbours : " + responseEntity.getStatusCodeValue());
             }
         });
     }
@@ -94,7 +95,7 @@ public class ClusterHandler {
         if (entity.getStatusCode() == HttpStatus.OK) {
             HTable.putAll(entity.getBody());
         } else {
-            System.err.println("Error getting own keys : " + entity.getStatusCode());
+            logger.error("Error getting own keys : " + entity.getStatusCode());
             System.exit(0);
         }
     }
@@ -106,7 +107,7 @@ public class ClusterHandler {
                     });
             if (entity.getStatusCode() == HttpStatus.OK) {
                 ni.setNoOfKeys(entity.getBody());
-            }else{
+            } else {
                 ni.setNoOfKeys(-1);
             }
             return ni;
