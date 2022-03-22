@@ -26,6 +26,7 @@ public class DhtApplication implements ApplicationRunner {
 
     public static void main(String[] args) {
         SpringApplication.run(DhtApplication.class, args);
+        System.out.println("Started");
     }
 
     @Override
@@ -40,6 +41,7 @@ public class DhtApplication implements ApplicationRunner {
             logger.error("Provide server ip and port as program args");
             System.exit(0);
         }
+
         MyInfo.mySocket = new NodeSocket(argMap.get("server.address"), Integer.parseInt(argMap.get("server.port")));
         Optional<NodeSocket> gatewayNode = Optional.empty();
         if (argMap.containsKey("gateway.address") && argMap.containsKey("gateway.port")) {
@@ -48,4 +50,5 @@ public class DhtApplication implements ApplicationRunner {
         }
         clusterHandler.init(gatewayNode);
     }
+
 }

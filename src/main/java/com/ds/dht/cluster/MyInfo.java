@@ -1,8 +1,8 @@
 package com.ds.dht.cluster;
 
-import com.ds.dht.util.Hash;
-
 import java.util.UUID;
+
+import com.ds.dht.util.Hash;
 
 public class MyInfo {
 
@@ -16,6 +16,10 @@ public class MyInfo {
             myInfo = new NodeInfo(hash, mySocket);
         }
         return myInfo;
+    }
+
+    public static void setMyInfo(NodeInfo nodeInfo) {
+        myInfo = nodeInfo;
     }
 
 }

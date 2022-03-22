@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -17,13 +18,12 @@ public class TestClient {
     static String ctTEXTPLAIN = "text/plain";
     static String ctAPPJSON = "application/json";
 
-    private static final List<String> urls = Arrays.asList("http://localhost:8081", "http://localhost:8082",
-            "http://localhost:8083");
+    private static final List<String> urls = Arrays.asList("http://localhost:8081");
 
     public static void main(String[] args) throws Exception {
 
         HashMap<String, String> testMap = new HashMap<>();
-        for (int i = 1; i < 1000; i++) {
+        for (int i = 1; i < 100; i++) {
             String uuid = UUID.randomUUID().toString();
             testMap.put(uuid, "val-" + uuid);
         }
@@ -32,7 +32,8 @@ public class TestClient {
             sendPUT(urls.get(getRandom(0, urls.size() - 1)) + "/" + k, testMap.get(k));
         }
 
-        for (String k : testMap.keySet()) {
+        List<String> keys = new ArrayList<>(testMap.keySet());
+        for (String k : keys) {
             String val = sendGET(urls.get(getRandom(0, urls.size() - 1)) + "/" + k, ctTEXTPLAIN, ctTEXTPLAIN);
             if (!testMap.get(k).equals(val)) {
                 System.out.println("Error " + k);

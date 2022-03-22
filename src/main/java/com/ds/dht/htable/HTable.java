@@ -3,58 +3,79 @@ package com.ds.dht.htable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HTable {
 
-    private static Logger logger = LoggerFactory.getLogger(HTable.class);
+    private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static final Map<String, String> MAP;
+    private static final Logger logger = LoggerFactory.getLogger("eventLogger");
+
+    private static final Map<String, String> TABLE;
 
     static {
-        MAP = Collections.synchronizedMap(new HashMap<>());
+        TABLE = Collections.synchronizedMap(new HashMap<>());
     }
 
     public static void put(String k, String v) {
-        MAP.put(k, v);
+        logEvent(EventOperation.PUT, k, Optional.of(v));
+        TABLE.put(k, v);
     }
 
     public static boolean exists(String k) {
-        return MAP.containsKey(k);
+        return TABLE.containsKey(k);
     }
 
     public static String get(String k) {
-        return MAP.get(k);
+        return TABLE.get(k);
     }
 
     public static String remove(String k) {
-        return MAP.remove(k);
+        logEvent(EventOperation.DEL, k, Optional.empty());
+        return TABLE.remove(k);
     }
 
     public static void putAll(Map<String, String> map) {
-        MAP.putAll(map);
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
     }
 
     public static Set<String> keys() {
-        return MAP.keySet();
+        return TABLE.keySet();
     }
 
     public static Map<String, String> keysToShare(final String nodeId) {
-        Set<String> toShare = MAP.keySet().stream().filter(k -> k.compareTo(nodeId) <= 0).collect(Collectors.toSet());
+        Set<String> toShare = keys().stream().filter(k -> k.compareTo(nodeId) <= 0).collect(Collectors.toSet());
         Map<String, String> map = new HashMap<>();
         for (String k : toShare) {
-            map.put(k, MAP.get(k));
-            MAP.remove(k);
+            map.put(k, get(k));
+            remove(k);
         }
         return map;
     }
 
     public static int size() {
-        return MAP.size();
+        return TABLE.size();
+    }
+
+    public static void logEvent(EventOperation eventOperation, String key, Optional<String> optionalValue) {
+        ObjectNode node = mapper.createObjectNode();
+        node.put("dtm", System.currentTimeMillis());
+        node.put("opr", eventOperation.toString());
+        node.put("key", key);
+        if (optionalValue.isPresent()) {
+            node.put("val", optionalValue.get());
+        }
+        logger.info(node.toString());
     }
 
 }
