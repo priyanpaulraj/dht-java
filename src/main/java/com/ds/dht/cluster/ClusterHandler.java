@@ -1,6 +1,7 @@
 package com.ds.dht.cluster;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -105,11 +106,7 @@ public class ClusterHandler {
             ResponseEntity<Integer> entity = restTemplate.exchange(ni.getSocket().getUrl() + "/table/size",
                     HttpMethod.GET, null, new ParameterizedTypeReference<>() {
                     });
-            if (entity.getStatusCode() == HttpStatus.OK) {
-                ni.setNoOfKeys(entity.getBody());
-            } else {
-                ni.setNoOfKeys(-1);
-            }
+            ni.setNoOfKeys(entity.getStatusCode() == HttpStatus.OK ? entity.getBody() : -1);
             return ni;
         }).collect(Collectors.toSet());
     }
@@ -120,6 +117,23 @@ public class ClusterHandler {
 
     public NodeInfo getNodeForKey(String key) {
         return getSuccessor(String.valueOf(Hash.doHash(key)));
+    }
+
+    public Set<NodeInfo> getNSuccessors(NodeInfo fromNode, int n) {
+        Set<NodeInfo> successors = new HashSet<>();
+        NodeInfo successor = fromNode;
+        while (n > 0) {
+            successor = ((ConcurrentSkipListSet<NodeInfo>) TREE).higher(successor);
+            if (successor == null) {
+                successor = ((ConcurrentSkipListSet<NodeInfo>) TREE).first();
+            }
+            if (successor.equals(fromNode) || successors.contains(successor)) {
+                throw new RuntimeException("Not enough nodes are alive");
+            }
+            successors.add(successor);
+            n--;
+        }
+        return successors;
     }
 
 }
