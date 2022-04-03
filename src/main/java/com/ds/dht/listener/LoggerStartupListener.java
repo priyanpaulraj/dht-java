@@ -14,7 +14,7 @@ public class LoggerStartupListener extends ContextAwareBase implements LoggerCon
 
     private boolean started = false;
 
-    private String serverPort = null;
+    private static String serverPort = null;
 
     @Override
     public void start() {

@@ -1,5 +1,7 @@
 package com.ds.dht.cluster;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
@@ -49,10 +51,10 @@ public class ClusterHandler {
                     populateKeysFromSuccessor(MyInfo.get());
                     updateMyInfoToNeighbours(entity.getBody());
                 } else {
-                    logger.error("Bad response from gateway node Help me! I'm alone : " + entity.getStatusCodeValue());
+                    logger.error("Bad response from gateway node Help! I'm alone : " + entity.getStatusCodeValue());
                 }
             } catch (Exception e) {
-                logger.error("Cannot connect gateway node. Help me! I'm alone ", e);
+                logger.error("Cannot connect gateway node. Help! I'm alone ", e);
             }
         });
         TREE.add(MyInfo.get());
@@ -90,11 +92,13 @@ public class ClusterHandler {
 
     private void populateKeysFromSuccessor(NodeInfo myInfo) {
         ResponseEntity<Map<String, String>> entity = restTemplate.exchange(
-                getSuccessor(myInfo).getSocket().getUrl() + "/share/" + myInfo.getId(),
+                getSuccessor(myInfo).getSocket().getUrl() + "/share/"
+                        + URLEncoder.encode(myInfo.getId(), StandardCharsets.UTF_8),
                 HttpMethod.GET, null, new ParameterizedTypeReference<>() {
                 });
         if (entity.getStatusCode() == HttpStatus.OK) {
             HTable.putAll(entity.getBody());
+            logger.info("Populating keys from neighbour : " + myInfo + " : " + HTable.keys());
         } else {
             logger.error("Error getting own keys : " + entity.getStatusCode());
             System.exit(0);

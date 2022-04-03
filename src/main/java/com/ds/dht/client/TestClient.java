@@ -88,7 +88,7 @@ public class TestClient {
         os.close();
         int responseCode = con.getResponseCode();
 
-        if (responseCode == HttpURLConnection.HTTP_OK) { // success
+        if (responseCode == HttpURLConnection.HTTP_OK) {
             BufferedReader in = new BufferedReader(new InputStreamReader(
                     con.getInputStream()));
             String inputLine;

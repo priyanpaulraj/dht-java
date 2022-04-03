@@ -1,5 +1,7 @@
 package com.ds.dht.htable;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
 
@@ -100,6 +102,7 @@ public class HTableResource {
 
     @GetMapping("/share/{newNodeId}")
     public Map<String, String> share(@PathVariable String newNodeId) {
+        newNodeId = URLDecoder.decode(newNodeId, StandardCharsets.UTF_8);
         return HTable.keysToShare(newNodeId);
     }
 

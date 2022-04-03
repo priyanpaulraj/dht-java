@@ -17,7 +17,8 @@ public class HTable {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static final Logger logger = LoggerFactory.getLogger("eventLogger");
+    private static final Logger eventLogger = LoggerFactory.getLogger("eventLogger");
+    private static final Logger logger = LoggerFactory.getLogger(HTable.class);
 
     private static final Map<String, String> TABLE;
 
@@ -58,8 +59,9 @@ public class HTable {
         Map<String, String> map = new HashMap<>();
         for (String k : toShare) {
             map.put(k, get(k));
-            remove(k);
+            // remove(k); //TODO: atleast n replication
         }
+        logger.debug("Sharing keys with new neighbour :" + nodeId + " : " + toShare);
         return map;
     }
 
@@ -75,7 +77,7 @@ public class HTable {
         if (optionalValue.isPresent()) {
             node.put("val", optionalValue.get());
         }
-        logger.info(node.toString());
+        eventLogger.info(node.toString());
     }
 
 }

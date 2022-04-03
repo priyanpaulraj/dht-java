@@ -49,7 +49,7 @@ public class DhtApplication implements ApplicationRunner {
             System.exit(0);
         }
         port = argMap.get("server.port");
-        MyInfo.mySocket = new NodeSocket(argMap.get("server.address"), Integer.parseInt(argMap.get("server.port")));
+        MyInfo.mySocket = new NodeSocket(argMap.get("server.address"), Integer.parseInt(port));
         Optional<NodeSocket> gatewayNode = Optional.empty();
         if (argMap.containsKey("gateway.address") && argMap.containsKey("gateway.port")) {
             gatewayNode = Optional
