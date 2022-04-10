@@ -1,17 +1,28 @@
 package com.ds.dht.htable;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.FileAppender;
+import ch.qos.logback.core.recovery.ResilientFileOutputStream;
 
 public class HTable {
 
@@ -67,6 +78,36 @@ public class HTable {
 
     public static int size() {
         return TABLE.size();
+    }
+
+    public static void populateFromEventLogs() throws IOException {
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        for (ch.qos.logback.classic.Logger logger : context.getLoggerList()) {
+            for (Iterator<Appender<ILoggingEvent>> index = logger.iteratorForAppenders(); index.hasNext();) {
+                Appender<ILoggingEvent> appender = index.next();
+                if (appender instanceof FileAppender && appender.getName().equals("eventLog")) {
+                    FileAppender<ILoggingEvent> fa = (FileAppender<ILoggingEvent>) appender;
+                    ResilientFileOutputStream rfos = (ResilientFileOutputStream) fa.getOutputStream();
+                    Files.lines(Paths.get(rfos.getFile().getPath())).forEach(HTable::loadTable);
+                }
+            }
+        }
+    }
+
+    private static void loadTable(String event) {
+        try {
+            ObjectNode node = mapper.readValue(event, ObjectNode.class);
+            String opr = node.get("opr").textValue();
+            String key = node.get("key").textValue();
+            if (opr.equals(EventOperation.PUT.toString())) {
+                String val = node.get("val").textValue();
+                TABLE.put(key, val);
+            } else if (opr.equals(EventOperation.DEL.toString())) {
+                TABLE.remove(key);
+            }
+        } catch (JsonProcessingException e) {
+            logger.error("Error parsing event log", e);
+        }
     }
 
     public static void logEvent(EventOperation eventOperation, String key, Optional<String> optionalValue) {

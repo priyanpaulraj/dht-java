@@ -120,7 +120,8 @@ public class ClusterHandler {
                 successor = ((ConcurrentSkipListSet<NodeInfo>) TREE).first();
             }
             if (successor.equals(fromNode) || successors.contains(successor)) {
-                throw new RuntimeException("Not enough nodes are alive");
+                throw new RuntimeException(
+                        "Not enough nodes are alive to replicate. Consider changing the replication configuration");
             }
             successors.add(successor);
             n--;

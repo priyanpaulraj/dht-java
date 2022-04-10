@@ -1,5 +1,6 @@
 package com.ds.dht;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -7,6 +8,7 @@ import java.util.Optional;
 import com.ds.dht.cluster.ClusterHandler;
 import com.ds.dht.cluster.MyInfo;
 import com.ds.dht.cluster.NodeSocket;
+import com.ds.dht.htable.HTable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +58,15 @@ public class DhtApplication implements ApplicationRunner {
                     .of(new NodeSocket(argMap.get("gateway.address"), Integer.parseInt(argMap.get("gateway.port"))));
         }
         clusterHandler.init(gatewayNode);
+        prePopulateTable();
+    }
+
+    private void prePopulateTable() {
+        try {
+            HTable.populateFromEventLogs();
+        } catch (IOException e) {
+            logger.error("Error populating table from event logs", e);
+        }
     }
 
 }
