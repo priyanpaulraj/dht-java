@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
 
+import com.ds.dht.client.RestClient;
 import com.ds.dht.cluster.ClusterHandler;
 import com.ds.dht.cluster.MyInfo;
 import com.ds.dht.cluster.NodeInfo;
@@ -24,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping("/")
@@ -36,7 +36,7 @@ public class HTableResource {
     private ClusterHandler clusterHandler;
 
     @Autowired
-    private RestTemplate restTemplate;
+    private RestClient restClient;
 
     @Value("${app.replication.nodes.count}")
     private int replicationNodeCount;
@@ -53,10 +53,10 @@ public class HTableResource {
                     HTable.put(key, value);
                     Set<NodeInfo> successors = clusterHandler.getNSuccessors(node, replicationNodeCount - 1);
                     for (NodeInfo successor : successors) {
-                        restTemplate.put(successor.getSocket().getUrl() + "/" + key + "?direct=true", value);
+                        restClient.put(successor.getSocket().getUrl() + "/" + key + "?direct=true", value);
                     }
                 } else {
-                    restTemplate.put(node.getSocket().getUrl() + "/" + key, value);
+                    restClient.put(node.getSocket().getUrl() + "/" + key, value);
                 }
             }
         } catch (Exception e) {
@@ -118,7 +118,7 @@ public class HTableResource {
 
     private ResponseEntity<String> get(NodeInfo node, String key, boolean direct) {
         try {
-            return restTemplate.getForEntity(node.getSocket().getUrl() + "/" + key + "?direct=" + direct, String.class);
+            return restClient.get(node.getSocket().getUrl() + "/" + key + "?direct=" + direct);
         } catch (HttpStatusCodeException e) {
             return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
                     .body(e.getResponseBodyAsString());

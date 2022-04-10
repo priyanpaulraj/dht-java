@@ -1,4 +1,4 @@
-package com.ds.dht.client;
+package com.ds.dht.test;
 
 import java.io.BufferedReader;
 import java.io.IOException;

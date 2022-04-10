@@ -11,20 +11,16 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 
 import com.ds.dht.DhtApplication;
+import com.ds.dht.client.RestClient;
 import com.ds.dht.htable.HTable;
 import com.ds.dht.util.Hash;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 @Component
 public class ClusterHandler {
@@ -34,7 +30,7 @@ public class ClusterHandler {
     private static final Set<NodeInfo> TREE;
 
     @Autowired
-    private RestTemplate restTemplate;
+    private RestClient restClient;
 
     static {
         TREE = new ConcurrentSkipListSet<>(Comparator.comparing(NodeInfo::getId));
@@ -43,9 +39,7 @@ public class ClusterHandler {
     public void init(Optional<NodeSocket> gatewaySocket) {
         gatewaySocket.ifPresent(gs -> {
             try {
-                ResponseEntity<Set<NodeInfo>> entity = restTemplate.exchange(gs.getUrl() + "/cluster/info",
-                        HttpMethod.GET, null, new ParameterizedTypeReference<>() {
-                        });
+                ResponseEntity<Set<NodeInfo>> entity = restClient.get(gs.getUrl() + "/cluster/info");
                 if (entity.getStatusCode() == HttpStatus.OK) {
                     TREE.addAll(entity.getBody());
                     populateKeysFromSuccessor(MyInfo.get());
@@ -62,12 +56,8 @@ public class ClusterHandler {
 
     private void updateMyInfoToNeighbours(Set<NodeInfo> neighbours) {
         neighbours.forEach(neighbour -> {
-            RequestEntity<NodeInfo> requestEntity = RequestEntity
-                    .put(neighbour.getSocket().getUrl() + "/cluster/node")
-                    .accept(MediaType.APPLICATION_JSON)
-                    .body(MyInfo.get());
-            ResponseEntity<?> responseEntity = restTemplate.exchange(requestEntity, new ParameterizedTypeReference<>() {
-            });
+            ResponseEntity<?> responseEntity = restClient.put(neighbour.getSocket().getUrl() + "/cluster/node",
+                    MyInfo.get());
             if (!responseEntity.getStatusCode().is2xxSuccessful()) {
                 logger.error("Cannot update my status to neighbours : " + responseEntity.getStatusCodeValue());
             }
@@ -91,11 +81,11 @@ public class ClusterHandler {
     }
 
     private void populateKeysFromSuccessor(NodeInfo myInfo) {
-        ResponseEntity<Map<String, String>> entity = restTemplate.exchange(
-                getSuccessor(myInfo).getSocket().getUrl() + "/share/"
-                        + URLEncoder.encode(myInfo.getId(), StandardCharsets.UTF_8),
-                HttpMethod.GET, null, new ParameterizedTypeReference<>() {
-                });
+        String url = new StringBuilder(getSuccessor(myInfo).getSocket().getUrl())
+                .append("/share/")
+                .append(URLEncoder.encode(myInfo.getId(), StandardCharsets.UTF_8))
+                .toString();
+        ResponseEntity<Map<String, String>> entity = restClient.get(url);
         if (entity.getStatusCode() == HttpStatus.OK) {
             HTable.putAll(entity.getBody());
             logger.info("Populating keys from neighbour : " + myInfo + " : " + HTable.keys());
@@ -107,9 +97,7 @@ public class ClusterHandler {
 
     Set<NodeInfo> getClusterInfo() {
         return TREE.stream().map(ni -> {
-            ResponseEntity<Integer> entity = restTemplate.exchange(ni.getSocket().getUrl() + "/table/size",
-                    HttpMethod.GET, null, new ParameterizedTypeReference<>() {
-                    });
+            ResponseEntity<Integer> entity = restClient.get(ni.getSocket().getUrl() + "/table/size");
             ni.setNoOfKeys(entity.getStatusCode() == HttpStatus.OK ? entity.getBody() : -1);
             return ni;
         }).collect(Collectors.toSet());
