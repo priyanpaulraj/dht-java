@@ -11,6 +11,7 @@ public class NodeInfo {
     private String id;
     private NodeSocket socket;
     private int noOfKeys;
+    private NodeStatus nodeStatus;
 
     public NodeInfo(String id, NodeSocket socket) {
         this.id = id;

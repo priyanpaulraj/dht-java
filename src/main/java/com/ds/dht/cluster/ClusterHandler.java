@@ -97,8 +97,14 @@ public class ClusterHandler {
 
     Set<NodeInfo> getClusterInfo() {
         return TREE.stream().map(ni -> {
-            ResponseEntity<Integer> entity = restClient.get(ni.getSocket().getUrl() + "/table/size");
-            ni.setNoOfKeys(entity.getStatusCode() == HttpStatus.OK ? entity.getBody() : -1);
+            try {
+                ResponseEntity<Integer> entity = restClient.get(ni.getSocket().getUrl() + "/table/size");
+                ni.setNoOfKeys(entity.getStatusCode() == HttpStatus.OK ? entity.getBody() : -1);
+                ni.setNodeStatus(NodeStatus.UP);
+            } catch (Exception e) {
+                ni.setNodeStatus(NodeStatus.DOWN);
+                logger.error("Error fetching table size", e);
+            }
             return ni;
         }).collect(Collectors.toSet());
     }
