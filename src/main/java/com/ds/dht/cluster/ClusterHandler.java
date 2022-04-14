@@ -18,6 +18,7 @@ import com.ds.dht.util.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -39,7 +40,9 @@ public class ClusterHandler {
     public void init(Optional<NodeSocket> gatewaySocket) {
         gatewaySocket.ifPresent(gs -> {
             try {
-                ResponseEntity<Set<NodeInfo>> entity = restClient.get(gs.getUrl() + "/cluster/info");
+                ResponseEntity<Set<NodeInfo>> entity = restClient.get(gs.getUrl() + "/cluster/info",
+                        new ParameterizedTypeReference<Set<NodeInfo>>() {
+                        });
                 if (entity.getStatusCode() == HttpStatus.OK) {
                     TREE.addAll(entity.getBody());
                     populateKeysFromSuccessor(MyInfo.get());
@@ -85,7 +88,9 @@ public class ClusterHandler {
                 .append("/share/")
                 .append(URLEncoder.encode(myInfo.getId(), StandardCharsets.UTF_8))
                 .toString();
-        ResponseEntity<Map<String, String>> entity = restClient.get(url);
+        ResponseEntity<Map<String, String>> entity = restClient.get(url,
+                new ParameterizedTypeReference<Map<String, String>>() {
+                });
         if (entity.getStatusCode() == HttpStatus.OK) {
             HTable.putAll(entity.getBody());
             logger.info("Populating keys from neighbour : " + myInfo + " : " + HTable.keys());
@@ -98,11 +103,13 @@ public class ClusterHandler {
     Set<NodeInfo> getClusterInfo() {
         return TREE.stream().map(ni -> {
             try {
-                ResponseEntity<Integer> entity = restClient.get(ni.getSocket().getUrl() + "/table/size");
+                ResponseEntity<Integer> entity = restClient.get(ni.getSocket().getUrl() + "/table/size",
+                        new ParameterizedTypeReference<Integer>() {
+                        });
                 ni.setNoOfKeys(entity.getStatusCode() == HttpStatus.OK ? entity.getBody() : -1);
-                ni.setNodeStatus(NodeStatus.UP);
+                // ni.setNodeStatus(NodeStatus.UP);
             } catch (Exception e) {
-                ni.setNodeStatus(NodeStatus.DOWN);
+                // ni.setNodeStatus(NodeStatus.DOWN);
                 logger.error("Error fetching table size", e);
             }
             return ni;

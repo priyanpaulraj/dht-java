@@ -15,10 +15,17 @@ public class RestClient {
     @Autowired
     private RestTemplate restTemplate;
 
-    public <R> ResponseEntity<R> get(String url) {
+    public <R> ResponseEntity<R> get(String url, ParameterizedTypeReference<R> responseType) {
         return restTemplate.exchange(url,
-                HttpMethod.GET, null, new ParameterizedTypeReference<>() {
-                });
+                HttpMethod.GET, null, responseType);
+    }
+
+    public <RQ, RS> ResponseEntity<RS> put(String url, RQ body, ParameterizedTypeReference<RS> responseType) {
+        RequestEntity<RQ> requestEntity = RequestEntity
+                .put(url)
+                .accept(MediaType.APPLICATION_JSON)
+                .body(body);
+        return restTemplate.exchange(requestEntity, responseType);
     }
 
     public <RQ, RS> ResponseEntity<RS> put(String url, RQ body) {

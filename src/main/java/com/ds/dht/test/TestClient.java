@@ -19,12 +19,12 @@ public class TestClient {
     static String ctAPPJSON = "application/json";
 
     private static final List<String> urls = Arrays.asList("http://localhost:8081", "http://localhost:8082",
-            "http://localhost:8083");
+            "http://localhost:8083", "http://localhost:8084");
 
     public static void main(String[] args) throws Exception {
 
         HashMap<String, String> testMap = new HashMap<>();
-        for (int i = 1; i < 2; i++) {
+        for (int i = 1; i < 1000; i++) {
             String uuid = UUID.randomUUID().toString();
             testMap.put(uuid, "val-" + uuid);
         }

@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -83,6 +84,7 @@ public class HTableResource {
                 ResponseEntity<String> responseEntity = get(node, key, false);
                 if (responseEntity == null) {
                     Set<NodeInfo> successors = clusterHandler.getNSuccessors(node, replicationNodeCount - 1);
+                    System.out.println(successors);
                     for (NodeInfo successor : successors) {
                         responseEntity = get(successor, key, true);
                         if (responseEntity != null) {
@@ -118,7 +120,9 @@ public class HTableResource {
 
     private ResponseEntity<String> get(NodeInfo node, String key, boolean direct) {
         try {
-            return restClient.get(node.getSocket().getUrl() + "/" + key + "?direct=" + direct);
+            return restClient.get(node.getSocket().getUrl() + "/" + key + "?direct=" + direct,
+                    new ParameterizedTypeReference<String>() {
+                    });
         } catch (HttpStatusCodeException e) {
             return ResponseEntity.status(e.getRawStatusCode()).headers(e.getResponseHeaders())
                     .body(e.getResponseBodyAsString());
