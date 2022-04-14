@@ -70,31 +70,13 @@ public class HTableResource {
             @RequestParam(name = "direct", defaultValue = "false", required = false) boolean direct) {
         try {
             if (direct) {
-                if (!HTable.exists(key))
-                    return ResponseEntity.notFound().build();
-                return ResponseEntity.ok(HTable.get(key));
+                return !HTable.exists(key) ? ResponseEntity.notFound().build() : ResponseEntity.ok(HTable.get(key));
             }
-
             NodeInfo node = clusterHandler.getNodeForKey(key);
             if (node.getId().equals(MyInfo.get().getId())) {
-                if (!HTable.exists(key))
-                    return ResponseEntity.notFound().build();
-                return ResponseEntity.ok(HTable.get(key));
+                return !HTable.exists(key) ? ResponseEntity.notFound().build() : ResponseEntity.ok(HTable.get(key));
             } else {
-                ResponseEntity<String> responseEntity = get(node, key, false);
-                if (responseEntity == null) {
-                    Set<NodeInfo> successors = clusterHandler.getNSuccessors(node, replicationNodeCount - 1);
-                    System.out.println(successors);
-                    for (NodeInfo successor : successors) {
-                        responseEntity = get(successor, key, true);
-                        if (responseEntity != null) {
-                            return responseEntity;
-                        }
-                    }
-                } else {
-                    return responseEntity;
-                }
-                return ResponseEntity.internalServerError().build();
+                return getFromNeighbours(node, key);
             }
         } catch (Exception e) {
             logger.error("Unknown error", e);
@@ -129,6 +111,23 @@ public class HTableResource {
         } catch (ResourceAccessException rae) {
             return null;
         }
+    }
+
+    private ResponseEntity<String> getFromNeighbours(NodeInfo node, String key) {
+        ResponseEntity<String> responseEntity = get(node, key, false);
+        if (responseEntity == null) {
+            Set<NodeInfo> successors = clusterHandler.getNSuccessors(node, replicationNodeCount - 1);
+            System.out.println(successors);
+            for (NodeInfo successor : successors) {
+                responseEntity = get(successor, key, true);
+                if (responseEntity != null) {
+                    return responseEntity;
+                }
+            }
+        } else {
+            return responseEntity;
+        }
+        return ResponseEntity.internalServerError().build();
     }
 
 }
